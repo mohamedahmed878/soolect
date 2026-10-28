@@ -105,13 +105,6 @@ export const api = {
   trackOrder: (d) => (isMock ? mock.track(d) : http.post('/orders/track', d).then((r) => { if (!loggedIn()) guest.remember(r.data); return r.data })),
   validateCoupon: (code, subtotal) => http.post('/coupons/validate', { code, subtotal }).then((r) => r.data),
 
-  /* Admin: marketers (affiliates) */
-  adminAffiliates: () => http.get('/admin/affiliates').then((r) => r.data),
-  adminCreateAffiliate: (d) => http.post('/admin/affiliates', d).then((r) => r.data),
-  adminUpdateAffiliate: (id, d) => http.put(`/admin/affiliates/${id}`, d).then((r) => r.data),
-  adminDeleteAffiliate: (id) => http.delete(`/admin/affiliates/${id}`).then((r) => r.data),
-  adminAffiliateOrders: (id) => http.get(`/admin/affiliates/${id}/orders`).then((r) => r.data),
-  adminAffiliatePayout: (id) => http.post(`/admin/affiliates/${id}/payout`).then((r) => r.data),
 }
 
 export const errMsg = (e) => e?.response?.data?.message || e?.message || 'Something went wrong'

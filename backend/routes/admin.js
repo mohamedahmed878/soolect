@@ -95,13 +95,14 @@ router.get('/orders', asyncHandler(async (req, res) => {
   }
   const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 50, 1), 200)
   const skip = Math.max(parseInt(req.query.skip, 10) || 0, 0)
-  const [orders, total] = await Promise.all([Order.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit), Order.countDocuments(filter)])
+  // .lean() skips the customer-facing toJSON, so the admin also sees the marketer + commission fields.
+  const [orders, total] = await Promise.all([Order.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(), Order.countDocuments(filter)])
   res.json({ orders, total })
 }))
 
 router.get('/orders/:id', asyncHandler(async (req, res) => {
   need(req.params.id, 'Order')
-  const order = await Order.findById(req.params.id)
+  const order = await Order.findById(req.params.id).lean()
   if (!order) throw new HttpError(404, 'Order not found')
   res.json(order)
 }))

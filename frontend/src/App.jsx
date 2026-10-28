@@ -14,7 +14,6 @@ import Account from './pages/Account'
 import Wishlist from './pages/Wishlist'
 import Addresses from './pages/Addresses'
 import Auth from './pages/Auth'
-import AdminAffiliates from './pages/AdminAffiliates'
 import { referral } from './services/api'
 
 // Only account-specific pages need a login. Guests can shop, check out and track orders.
@@ -46,7 +45,6 @@ export default function App() {
         <Route path="orders/:id" element={<OrderDetails />} />
         <Route path="account" element={<Protected><Account /></Protected>} />
         <Route path="addresses" element={<Protected><Addresses /></Protected>} />
-        <Route path="admin/affiliates" element={<AdminAffiliates />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
