@@ -81,11 +81,9 @@ export async function createOrder(input, auth) {
       couponUsed = true
     }
 
-    const counter = await Counter.findOneAndUpdate({ _id: 'order' }, { $inc: { seq: 1 } }, { upsert: true, new: true })
     const accessToken = crypto.randomBytes(24).toString('hex')
     const now = new Date()
-    const order = await Order.create({
-      number: `SO${10000 + counter.seq}`,
+    const doc = {
       userId: auth?.role === 'user' && isObjectId(auth.id) ? auth.id : undefined,
       accessToken,
       items: lines.map(({ stock, ...item }) => item),
@@ -97,12 +95,37 @@ export async function createOrder(input, auth) {
       ...(affiliate && { affiliateId: affiliate._id, affiliateCode: affiliate.code, commissionRate: affiliate.commissionRate, commission }),
       subtotal, discount, shipping, total,
       timeline: [{ status: 'placed', at: now }, { status: 'processing', at: now }],
-    })
+    }
+    const order = await createWithOrderNumber(doc)
     return { order, accessToken }
   } catch (e) {
     await releaseStock(reserved).catch((err) => console.error('Stock rollback failed:', err))
     if (couponUsed) await Coupon.updateOne({ _id: coupon._id, usedCount: { $gt: 0 } }, { $inc: { usedCount: -1 } }).catch(() => {})
     throw e
+  }
+}
+
+// Order numbers come from an atomic counter. If the counter ever falls behind the real orders
+// (collection cleared/restored/edited by hand), create() hits a duplicate "number". Heal the counter and retry.
+async function nextOrderNumber() {
+  const c = await Counter.findOneAndUpdate({ _id: 'order' }, { $inc: { seq: 1 } }, { upsert: true, new: true })
+  return `SO${10000 + c.seq}`
+}
+
+async function syncOrderCounter() {
+  const [last] = await Order.find().sort({ number: -1 }).limit(1).select('number').lean()
+  const seq = last ? parseInt(String(last.number).replace(/\D/g, ''), 10) - 10000 : 0
+  if (Number.isFinite(seq) && seq > 0) await Counter.updateOne({ _id: 'order', seq: { $lt: seq } }, { $set: { seq } }, { upsert: true }).catch(() => {})
+}
+
+async function createWithOrderNumber(doc) {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try {
+      return await Order.create({ ...doc, number: await nextOrderNumber() })
+    } catch (e) {
+      if (e?.code !== 11000 || !e.keyPattern?.number || attempt === 3) throw e
+      await syncOrderCounter()
+    }
   }
 }
 

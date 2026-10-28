@@ -16,7 +16,7 @@ export function errorHandler(err, req, res, next) {
   if (err?.name === 'CastError') return res.status(400).json({ message: 'Invalid id or value' })
   if (err?.code === 11000) {
     const field = Object.keys(err.keyPattern || {})[0] || ''
-    const message = field === 'email' ? 'Email already registered' : field.includes('sku') ? 'SKU already exists' : field === 'code' ? 'Code already exists' : 'Already exists'
+    const message = field === 'email' ? 'Email already registered' : field.includes('sku') ? 'SKU already exists' : field === 'code' ? 'Code already exists' : field === 'number' ? 'Could not generate an order number, please try again' : 'Already exists'
     return res.status(409).json({ message })
   }
   console.error(err)
