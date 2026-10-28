@@ -23,7 +23,7 @@ export default function Checkout() {
   const nav = useNavigate()
   const saved = useAddresses().list
   const [step, setStep] = useState(0)
-  const [info, setInfo] = useState({ email: user?.email || '', phone: user?.phone || '', fullName: user?.name || '', address: '', city: 'Alexandria' })
+  const [info, setInfo] = useState({ phone: user?.phone || '', fullName: user?.name || '', address: '', city: 'Alexandria' })
   const [ship, setShip] = useState('standard')
   const [pay, setPay] = useState('cod')
   const [agree, setAgree] = useState(false)
@@ -44,12 +44,12 @@ export default function Checkout() {
     try {
       const order = await api.createOrder({
         items: items.map(({ productId, name, type, color, size, qty, price }) => ({ productId, name, type, color, size, qty, price })),
-        contact: { email: info.email, phone: info.phone },
+        contact: { phone: info.phone },
         address: { fullName: info.fullName, address: info.address, city: info.city },
         shippingMethod: shipping.id, paymentMethod: pay, discountCode: discount?.code,
         subtotal, shipping: shippingCost, total,
       })
-      clear(); nav(`/order-confirmed/${order._id}`, { replace: true, state: { number: order.number, token: order.accessToken } })
+      clear(); nav(`/order-confirmed/${order._id}?token=${order.accessToken}`, { replace: true, state: { number: order.number, token: order.accessToken } })
     } catch (x) { setErr(errMsg(x)) } finally { setBusy(false) }
   }
 
@@ -61,7 +61,6 @@ export default function Checkout() {
       {step === 0 && (
         <form className="form step-in" onSubmit={go}>
           <h3>Contact Information</h3>
-          <label className="fl"><span>Email</span><input required type="email" value={info.email} onChange={set('email')} /></label>
           <label className="fl"><span>Phone / WhatsApp</span><input required type="tel" value={info.phone} onChange={set('phone')} placeholder="+20 123 456 7890" /></label>
           <h3>Shipping Address</h3>
           {saved.length > 0 && (

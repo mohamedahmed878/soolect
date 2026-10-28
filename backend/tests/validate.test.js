@@ -30,6 +30,7 @@ test('empty cart, bad ids and bad quantities are rejected', () => {
 
 test('contact, address and method checks', () => {
   assert.throws(() => validateOrderInput({ ...good(), contact: { email: 'nope', phone: '01001234567' } }), /email/)
+  assert.equal(validateOrderInput({ ...good(), contact: { phone: '01001234567' } }).contact.email, undefined) // email is optional
   assert.throws(() => validateOrderInput({ ...good(), contact: { email: 'a@b.co', phone: '12' } }), /phone/)
   assert.throws(() => validateOrderInput({ ...good(), address: { fullName: '', address: 'x', city: 'y' } }), /required/)
   assert.throws(() => validateOrderInput({ ...good(), shippingMethod: 'drone' }), /shipping/)

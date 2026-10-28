@@ -26,7 +26,7 @@ const orderSchema = new mongoose.Schema(
     // Secret that lets a guest open /orders/:id without an account. Never returned in lists.
     accessToken: { type: String, required: true, select: false },
     items: { type: [itemSchema], validate: (v) => v.length > 0 },
-    contact: { email: { type: String, required: true }, phone: { type: String, required: true } },
+    contact: { email: { type: String }, phone: { type: String, required: true } },
     address: { fullName: String, address: String, city: String },
     shippingMethod: { type: String, enum: ['standard', 'express', 'free'], required: true },
     paymentMethod: { type: String, enum: ['card', 'vodafone', 'cod', 'paypal'], required: true },

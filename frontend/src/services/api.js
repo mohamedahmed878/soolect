@@ -79,6 +79,15 @@ const mock = {
   },
   orders: () => delay(ls.get('mock_orders', [])),
   order: (id) => delay(ls.get('mock_orders', []).find((o) => o._id === id)),
+  cancelOrder: (id) => {
+    const all = ls.get('mock_orders', [])
+    const o = all.find((x) => x._id === id)
+    if (!o) return Promise.reject(new Error('Order not found'))
+    if (o.status !== 'processing') return Promise.reject(new Error('This order can no longer be cancelled'))
+    o.status = 'cancelled'; o.timeline = [...(o.timeline || []), { status: 'cancelled', at: new Date().toISOString() }]
+    ls.set('mock_orders', all)
+    return delay(o)
+  },
   track: ({ number, phone }) => {
     const key = (v) => String(v || '').replace(/\D/g, '').slice(-10)
     const n = String(number || '').trim().toUpperCase().replace(/^#/, '')
@@ -126,6 +135,7 @@ export const api = {
     if (loggedIn()) return http.get('/orders/my').then((r) => r.data)
     return Promise.all(guest.list().map((g) => http.get(`/orders/${g._id}`, { params: { token: g.token } }).then((r) => r.data).catch(() => null))).then((l) => l.filter(Boolean))
   },
+  cancelOrder: (id, token) => (isMock ? mock.cancelOrder(id) : http.post(`/orders/${id}/cancel`, { token }).then((r) => r.data)),
   getOrder: (id, token) => (isMock ? mock.order(id) : http.get(`/orders/${id}`, { params: token ? { token } : undefined }).then((r) => r.data)),
   trackOrder: (d) => (isMock ? mock.track(d) : http.post('/orders/track', d).then((r) => { if (!loggedIn()) guest.remember(r.data); return r.data })),
   getReviews: () => (isMock ? mock.reviews() : http.get('/reviews').then((r) => r.data)),

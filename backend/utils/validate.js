@@ -38,7 +38,7 @@ export function validateOrderInput(body = {}) {
 
   const email = str(body.contact?.email, 120).toLowerCase()
   const phone = str(body.contact?.phone, 30)
-  if (!isEmail(email)) throw bad('A valid email is required')
+  if (email && !isEmail(email)) throw bad('That email does not look right')
   if (!isPhone(phone)) throw bad('A valid phone number is required')
 
   const a = body.address || {}
@@ -53,5 +53,5 @@ export function validateOrderInput(body = {}) {
   const discountCode = str(body.discountCode, 40).toUpperCase() || null
   // Marketer referral code from the `?ref=` link. Optional, and an unknown code never blocks an order.
   const refCode = str(body.refCode, 20).toUpperCase() || null
-  return { items, contact: { email, phone }, address, shippingMethod, paymentMethod, discountCode, refCode }
+  return { items, contact: { phone, ...(email && { email }) }, address, shippingMethod, paymentMethod, discountCode, refCode }
 }

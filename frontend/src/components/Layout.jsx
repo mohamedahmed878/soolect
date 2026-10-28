@@ -4,6 +4,7 @@ import Icon from './Icon'
 import { useCart } from '../context/CartContext'
 import { useTheme } from '../context/ThemeContext'
 import { useSearch } from '../context/SearchContext'
+import { WhatsAppButton } from './WhatsApp'
 
 const LogoMark = () => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 5h11a4 4 0 0 1 0 8H9a4 4 0 0 0 0 8h11" /><path d="M4 9h6M14 17h6" opacity=".6" /></svg>)
 
@@ -50,7 +51,7 @@ export function BottomNav() {
 export default function Layout() {
   const { pathname } = useLocation()
   useEffect(() => { window.scrollTo(0, 0) }, [pathname])
-  return (<div className="app"><Header /><main className="page" key={pathname}><Outlet /></main><BottomNav /></div>)
+  return (<div className="app"><Header /><main className="page" key={pathname}><Outlet /></main><WhatsAppButton /><BottomNav /></div>)
 }
 
 export function PageBar({ title, back = true, right }) {
