@@ -16,6 +16,8 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: [true, 'Email is required'], unique: true, lowercase: true, trim: true, maxlength: 120 },
     phone: { type: String, required: [true, 'Phone is required'], trim: true, maxlength: 30 },
     passwordHash: { type: String, required: true, select: false },
+    // 'customer' (default) or 'admin'. Change it from MongoDB Atlas.
+    role: { type: String, enum: ['customer', 'admin'], default: 'customer' },
     wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
     addresses: [addressSchema],
   },
