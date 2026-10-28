@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import Garment from '../components/Garment'
+import ProductImage from '../components/ProductImage'
 import { PageBar } from '../components/Layout'
 import { api, errMsg } from '../services/api'
 import { useAuth } from '../context/AuthContext'
@@ -54,7 +54,7 @@ export default function Orders() {
           {list.map((o, n) => (
             <li key={o._id} className="ocard" style={{ '--i': n }}>
               <div className="ocard-head"><div><b>#{o.number}</b><span className="muted">{fmtDate(o.createdAt)} · EGP {o.total}</span></div><span className={`pill ${o.status}`}>{STATUS[o.status] || o.status}</span></div>
-              <div className="ocard-thumbs">{o.items.slice(0, 3).map((i, k) => <div key={k} className="thumb sm"><Garment type={i.type} color={i.color} /></div>)}{o.items.length > 3 && <span className="more">+{o.items.length - 3}</span>}</div>
+              <div className="ocard-thumbs">{o.items.slice(0, 3).map((i, k) => <div key={k} className="thumb sm"><ProductImage src={i.image} type={i.type} color={i.color} alt={i.name} /></div>)}{o.items.length > 3 && <span className="more">+{o.items.length - 3}</span>}</div>
               <Link to={`/orders/${o._id}`} className="btn btn-ghost block">View Details</Link>
             </li>
           ))}

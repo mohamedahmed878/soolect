@@ -1,8 +1,9 @@
 import crypto from 'node:crypto'
-import { Router } from 'express'
+import express, { Router } from 'express'
 import { requireAdmin } from '../middleware/auth.js'
 import Affiliate from '../models/Affiliate.js'
 import Coupon from '../models/Coupon.js'
+import Image from '../models/Image.js'
 import Order, { ORDER_STATUSES, PAYMENT_STATUSES } from '../models/Order.js'
 import Product from '../models/Product.js'
 import Review from '../models/Review.js'
@@ -143,18 +144,42 @@ function cleanProduct(b = {}) {
   if ('active' in b) out.active = !!b.active
   if ('rating' in b) out.rating = num(b.rating)
   if ('reviews' in b) out.reviews = num(b.reviews)
-  if ('images' in b) out.images = (Array.isArray(b.images) ? b.images : []).map((u) => str(u, 500)).filter(Boolean).slice(0, 10)
+  if ('images' in b) out.images = (Array.isArray(b.images) ? b.images : []).map(imageUrl).filter(Boolean).slice(0, 10)
   if ('variants' in b) {
     if (!Array.isArray(b.variants)) throw new HttpError(400, 'variants must be an array')
     out.variants = b.variants.slice(0, 100).map((v) => ({
       sku: str(v?.sku, 60), color: str(v?.color, 30), size: str(v?.size, 20),
-      price: num(v?.price), stock: num(v?.stock) ?? 0, image: str(v?.image, 500) || undefined,
+      price: num(v?.price), stock: num(v?.stock) ?? 0, image: imageUrl(v?.image) || undefined,
     }))
   }
   if (out.category && !CATEGORIES.includes(out.category)) throw new HttpError(400, 'Invalid category')
   if (out.type && !TYPES.includes(out.type)) throw new HttpError(400, 'Invalid type')
   return out
 }
+
+/* ------------------------------ product photos ------------------------------ */
+// Only our own uploads (/api/images/<id>) or normal web links are accepted as image addresses.
+const imageUrl = (u) => {
+  const s = str(u, 500)
+  return /^(https?:\/\/|\/api\/images\/[a-f0-9]{24}$)/i.test(s) ? s : ''
+}
+
+// The file type comes from the file's own first bytes, never from what the browser claims.
+function sniffImage(b) {
+  if (b.length > 12 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return 'image/jpeg'
+  if (b.length > 12 && b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return 'image/png'
+  if (b.length > 12 && b.subarray(0, 4).toString('latin1') === 'RIFF' && b.subarray(8, 12).toString('latin1') === 'WEBP') return 'image/webp'
+  return null
+}
+
+// The admin panel shrinks photos in the browser first, so uploads are small (well under Vercel's 4.5 MB request limit).
+router.post('/images', express.raw({ type: ['image/jpeg', 'image/png', 'image/webp'], limit: '4mb' }), asyncHandler(async (req, res) => {
+  if (!Buffer.isBuffer(req.body) || !req.body.length) throw new HttpError(400, 'Send a PNG or JPG image')
+  const contentType = sniffImage(req.body)
+  if (!contentType) throw new HttpError(400, 'Only PNG, JPG or WebP images are allowed')
+  const img = await Image.create({ data: req.body, contentType, size: req.body.length })
+  res.status(201).json({ url: `/api/images/${img._id}` })
+}))
 
 router.get('/products', asyncHandler(async (req, res) => {
   res.json(await Product.find().sort({ createdAt: -1 }).limit(500))

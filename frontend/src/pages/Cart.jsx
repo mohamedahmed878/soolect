@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import Garment from '../components/Garment'
+import ProductImage from '../components/ProductImage'
 import Icon from '../components/Icon'
 import { PageBar } from '../components/Layout'
 import { useCart, shippingFor } from '../context/CartContext'
@@ -45,7 +45,7 @@ export default function Cart() {
         <ul className="cart-list">
           {items.map((i, n) => (
             <li key={`${i.productId}${i.color}${i.size}`} className="cart-item" style={{ '--i': n }}>
-              <div className="thumb"><Garment type={i.type} color={i.color} /></div>
+              <div className="thumb"><ProductImage src={i.image} type={i.type} color={i.color} alt={i.name} /></div>
               <div className="cart-mid">
                 <b>{i.name}</b><span className="muted">{i.color[0].toUpperCase() + i.color.slice(1)} / {i.size}</span>
                 <div className="qty">

@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import Garment from '../components/Garment'
+import ProductImage, { pickImage } from '../components/ProductImage'
 import Icon from '../components/Icon'
 import useProducts from '../hooks/useProducts'
 
@@ -52,7 +52,7 @@ function SearchModal({ onClose }) {
             {results.map((p) => (
               <li key={p._id}>
                 <Link to={`/product/${p._id}`} onClick={onClose}>
-                  <div className="thumb sm"><Garment type={p.type} color={p.colors[0]} /></div>
+                  <div className="thumb sm"><ProductImage src={pickImage(p, p.colors[0])} type={p.type} color={p.colors[0]} alt={p.name} /></div>
                   <div><b>{p.name}</b><span className="muted">EGP {p.price}</span></div>
                   <Icon name="chevron" size={16} />
                 </Link>

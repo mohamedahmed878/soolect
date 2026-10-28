@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import Garment from '../components/Garment'
+import ProductImage from '../components/ProductImage'
 import { PageBar } from '../components/Layout'
 import { useAuth } from '../context/AuthContext'
 import { useCart, SHIPPING_METHODS, shippingFor } from '../context/CartContext'
@@ -101,7 +101,7 @@ export default function Checkout() {
       {step === 3 && (
         <div className="form step-in">
           <h3>Order Summary</h3>
-          <ul className="mini">{items.map((i) => <li key={`${i.productId}${i.color}${i.size}`}><div className="thumb sm"><Garment type={i.type} color={i.color} /></div><div><b>{i.name}</b><span className="muted">{i.color} / {i.size} · x{i.qty}</span></div><b>EGP {i.price * i.qty}</b></li>)}</ul>
+          <ul className="mini">{items.map((i) => <li key={`${i.productId}${i.color}${i.size}`}><div className="thumb sm"><ProductImage src={i.image} type={i.type} color={i.color} alt={i.name} /></div><div><b>{i.name}</b><span className="muted">{i.color} / {i.size} · x{i.qty}</span></div><b>EGP {i.price * i.qty}</b></li>)}</ul>
           <dl className="sum"><div><dt>Subtotal</dt><dd>EGP {subtotal}</dd></div>{discount && <div><dt>Discount</dt><dd>- EGP {discount.amount}</dd></div>}<div><dt>Shipping</dt><dd>{shippingCost ? `EGP ${shippingCost}` : 'Free'}</dd></div><div className="total"><dt>Total</dt><dd>EGP {total}</dd></div></dl>
           <p className="muted small">Ship to {info.fullName}, {info.address}, {info.city} · Pay by {PAY.find((p) => p[0] === pay)[1]}</p>
           <label className="check"><input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} /><span>I agree to the <a>Terms &amp; Conditions</a> and <a>Privacy Policy</a></span></label>

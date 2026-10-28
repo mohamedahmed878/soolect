@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 // Empty = same origin (local dev goes through the Vite proxy). In production this is the store's address.
-const BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+export const BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 export const TOKEN_KEY = 'soolect_admin_token'
 
 const http = axios.create({ baseURL: `${BASE}/api`, timeout: 20000 })
@@ -40,6 +40,9 @@ export const api = {
   coupons: () => http.get('/admin/coupons').then(data),
   saveCoupon: (id, body) => (id ? http.put(`/admin/coupons/${id}`, body) : http.post('/admin/coupons', body)).then(data),
   deleteCoupon: (id) => http.delete(`/admin/coupons/${id}`).then(data),
+
+  // Sends one already-compressed photo; returns { url } to store on the product.
+  uploadImage: (blob) => http.post('/admin/images', blob, { headers: { 'Content-Type': blob.type }, timeout: 60000 }).then(data),
 
   analytics: (days) => http.get('/admin/analytics', { params: { days } }).then(data),
 
