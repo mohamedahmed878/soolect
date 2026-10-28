@@ -46,15 +46,33 @@ const mock = {
     const orders = ls.get('mock_orders', [])
     const order = {
       _id: 'o' + Date.now(), number: 'SO' + Math.floor(10000 + Math.random() * 89999),
-      status: 'processing', createdAt: new Date().toISOString(),
-      timeline: [{ status: 'placed', at: new Date().toISOString() }], ...payload,
+      status: 'processing', createdAt: new Date().toISOString(), accessToken: 'mock',
+      timeline: [{ status: 'placed', at: new Date().toISOString() }, { status: 'processing', at: new Date().toISOString() }], ...payload,
     }
     ls.set('mock_orders', [order, ...orders])
     return delay(order)
   },
   orders: () => delay(ls.get('mock_orders', [])),
   order: (id) => delay(ls.get('mock_orders', []).find((o) => o._id === id)),
+  track: ({ number, phone }) => {
+    const key = (v) => String(v || '').replace(/\D/g, '').slice(-10)
+    const n = String(number || '').trim().toUpperCase().replace(/^#/, '')
+    const o = ls.get('mock_orders', []).find((x) => x.number === n && key(x.contact?.phone) === key(phone))
+    return o ? delay(o) : Promise.reject(new Error('No order found with that number and phone'))
+  },
 }
+
+/* Guests have no account, so the browser remembers each order's id + secret token to show them in "My Orders". */
+const GUEST_KEY = 'soalect_guest_orders'
+const guest = {
+  list: () => ls.get(GUEST_KEY, []),
+  remember: (o) => {
+    if (!o?.accessToken) return
+    const rest = guest.list().filter((g) => g._id !== o._id)
+    ls.set(GUEST_KEY, [{ _id: o._id, number: o.number, token: o.accessToken }, ...rest].slice(0, 20))
+  },
+}
+const loggedIn = () => !!localStorage.getItem('soalect_token')
 
 /* ---------- Public API used by the app ---------- */
 export const api = {
@@ -63,9 +81,15 @@ export const api = {
   register: (d) => (isMock ? mock.register(d) : http.post('/auth/register', d).then((r) => r.data)),
   login: (d) => (isMock ? mock.login(d) : http.post('/auth/login', d).then((r) => r.data)),
   me: () => (isMock ? mock.me() : http.get('/auth/me').then((r) => r.data)),
-  createOrder: (d) => (isMock ? mock.createOrder(d) : http.post('/orders', d).then((r) => r.data)),
-  getMyOrders: () => (isMock ? mock.orders() : http.get('/orders/my').then((r) => r.data)),
-  getOrder: (id) => (isMock ? mock.order(id) : http.get(`/orders/${id}`).then((r) => r.data)),
+  createOrder: (d) => (isMock ? mock.createOrder(d) : http.post('/orders', d).then((r) => { if (!loggedIn()) guest.remember(r.data); return r.data })),
+  getMyOrders: () => {
+    if (isMock) return mock.orders()
+    if (loggedIn()) return http.get('/orders/my').then((r) => r.data)
+    return Promise.all(guest.list().map((g) => http.get(`/orders/${g._id}`, { params: { token: g.token } }).then((r) => r.data).catch(() => null))).then((l) => l.filter(Boolean))
+  },
+  getOrder: (id, token) => (isMock ? mock.order(id) : http.get(`/orders/${id}`, { params: token ? { token } : undefined }).then((r) => r.data)),
+  trackOrder: (d) => (isMock ? mock.track(d) : http.post('/orders/track', d).then((r) => { if (!loggedIn()) guest.remember(r.data); return r.data })),
+  validateCoupon: (code, subtotal) => http.post('/coupons/validate', { code, subtotal }).then((r) => r.data),
 }
 
 export const errMsg = (e) => e?.response?.data?.message || e?.message || 'Something went wrong'

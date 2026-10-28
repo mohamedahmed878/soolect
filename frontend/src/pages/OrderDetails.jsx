@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import Garment from '../components/Garment'
 import { PageBar } from '../components/Layout'
 import { api } from '../services/api'
@@ -10,9 +10,13 @@ const FLOW = [['placed', 'Order Placed'], ['processing', 'Processing'], ['shippe
 
 export default function OrderDetails() {
   const { id } = useParams()
+  const [params] = useSearchParams()
+  const token = params.get('token')
   const [o, setO] = useState(null)
-  useEffect(() => { api.getOrder(id).then(setO) }, [id])
+  const [missing, setMissing] = useState(false)
+  useEffect(() => { api.getOrder(id, token).then((d) => (d ? setO(d) : setMissing(true))).catch(() => setMissing(true)) }, [id, token])
   useLiveOrders((u) => u._id === id && setO(u))
+  if (missing) return <><PageBar title="Order Details" /><div className="empty"><p>We couldn't find this order.</p><Link to="/orders" className="btn btn-dark">My orders</Link></div></>
   if (!o) return <p className="center muted">Loading…</p>
 
   const reached = o.status === 'delivered' ? 3 : o.status === 'shipped' ? 2 : 1

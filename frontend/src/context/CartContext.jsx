@@ -10,6 +10,9 @@ export const SHIPPING_METHODS = [
   { id: 'free', label: 'Free Shipping', days: `Over ${FREE_SHIPPING_OVER} EGP`, price: 0, minSubtotal: FREE_SHIPPING_OVER },
 ]
 
+// `subtotal` is before any coupon. Mirrors backend/services/pricing.js.
+export const shippingFor = (id, subtotal) => (id === 'express' ? 100 : id === 'free' ? 0 : subtotal >= FREE_SHIPPING_OVER ? 0 : 50)
+
 export function CartProvider({ children }) {
   const [items, setItems] = useState(() => { try { return JSON.parse(localStorage.getItem('soalect_cart')) || [] } catch { return [] } })
   const [discount, setDiscount] = useState(null) // { code, amount }

@@ -3,7 +3,7 @@ import Icon from '../components/Icon'
 import { PageBar } from '../components/Layout'
 import { useAuth } from '../context/AuthContext'
 
-const ROWS = [['orders', 'My Orders', '/orders'], ['pin', 'Addresses'], ['card', 'Payment Methods'], ['heart', 'Wishlist'], ['cog', 'Settings']]
+const ROWS = [['orders', 'My Orders', '/orders'], ['pin', 'Addresses', '/addresses'], ['card', 'Payment Methods'], ['heart', 'Wishlist', '/wishlist'], ['cog', 'Settings']]
 
 export default function Account() {
   const { user, logout } = useAuth()

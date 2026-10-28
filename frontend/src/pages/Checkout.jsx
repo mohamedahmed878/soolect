@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import Garment from '../components/Garment'
 import { PageBar } from '../components/Layout'
 import { useAuth } from '../context/AuthContext'
-import { useCart, SHIPPING_METHODS } from '../context/CartContext'
+import { useCart, SHIPPING_METHODS, shippingFor } from '../context/CartContext'
 import { api, errMsg } from '../services/api'
+import useAddresses from '../hooks/useAddresses'
 
 const Logo = ({ k }) => ({
   card: <span className="paylogo"><b style={{ color: '#1a1f71', fontStyle: 'italic' }}>VISA</b><span className="mc"><i /><i /></span></span>,
@@ -20,6 +21,7 @@ export default function Checkout() {
   const { user } = useAuth()
   const { items, subtotal, discount, clear } = useCart()
   const nav = useNavigate()
+  const saved = useAddresses().list
   const [step, setStep] = useState(0)
   const [info, setInfo] = useState({ email: user?.email || '', phone: user?.phone || '', fullName: user?.name || '', address: '', city: 'Alexandria', postal: '' })
   const [ship, setShip] = useState('standard')
@@ -30,7 +32,7 @@ export default function Checkout() {
 
   const methods = SHIPPING_METHODS.filter((m) => !m.minSubtotal || subtotal >= m.minSubtotal)
   const shipping = methods.find((m) => m.id === ship) || methods[0]
-  const shippingCost = subtotal >= 1000 ? 0 : shipping.price
+  const shippingCost = shippingFor(shipping.id, subtotal)
   const total = subtotal - (discount?.amount || 0) + shippingCost
   const set = (k) => (e) => setInfo({ ...info, [k]: e.target.value })
 
@@ -47,7 +49,7 @@ export default function Checkout() {
         shippingMethod: shipping.id, paymentMethod: pay, discountCode: discount?.code,
         subtotal, shipping: shippingCost, total,
       })
-      clear(); nav(`/order-confirmed/${order._id}`, { replace: true, state: { number: order.number } })
+      clear(); nav(`/order-confirmed/${order._id}`, { replace: true, state: { number: order.number, token: order.accessToken } })
     } catch (x) { setErr(errMsg(x)) } finally { setBusy(false) }
   }
 
@@ -62,6 +64,11 @@ export default function Checkout() {
           <label className="fl"><span>Email</span><input required type="email" value={info.email} onChange={set('email')} /></label>
           <label className="fl"><span>Phone / WhatsApp</span><input required type="tel" value={info.phone} onChange={set('phone')} placeholder="+20 123 456 7890" /></label>
           <h3>Shipping Address</h3>
+          {saved.length > 0 && (
+            <div className="chips">
+              {saved.map((a) => <button type="button" key={a._id} className="chip" onClick={() => setInfo({ ...info, phone: a.phone || info.phone, fullName: a.fullName, address: a.address, city: a.city, postal: a.postal || '' })}>{a.label}{a.isDefault ? ' ★' : ''}</button>)}
+            </div>
+          )}
           <label className="fl"><span>Full Name</span><input required value={info.fullName} onChange={set('fullName')} /></label>
           <label className="fl"><span>Address</span><input required value={info.address} onChange={set('address')} /></label>
           <div className="row2"><label className="fl"><span>City</span><input required value={info.city} onChange={set('city')} /></label><label className="fl"><span>Postal Code</span><input value={info.postal} onChange={set('postal')} /></label></div>

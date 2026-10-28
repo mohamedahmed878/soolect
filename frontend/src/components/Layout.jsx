@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-do
 import Icon from './Icon'
 import { useCart } from '../context/CartContext'
 import { useTheme } from '../context/ThemeContext'
+import { useSearch } from '../context/SearchContext'
 
 const LogoMark = () => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 5h11a4 4 0 0 1 0 8H9a4 4 0 0 0 0 8h11" /><path d="M4 9h6M14 17h6" opacity=".6" /></svg>)
 
@@ -10,6 +11,7 @@ export function Header() {
   const { count } = useCart()
   const { theme, toggle } = useTheme()
   const nav = useNavigate()
+  const search = useSearch()
   const { pathname } = useLocation()
   const [open, setOpen] = useState(false)
   useEffect(() => { setOpen(false) }, [pathname])
@@ -19,7 +21,7 @@ export function Header() {
         <Link to="/" className="logo"><LogoMark />SOALECT</Link>
         <nav className="header-links"><NavLink to="/" end>Home</NavLink><NavLink to="/shop">Shop</NavLink><NavLink to="/orders">Orders</NavLink><NavLink to="/account">Account</NavLink></nav>
         <div className="header-actions">
-          <button aria-label="Search" onClick={() => nav('/search')}><Icon name="search" size={19} /></button>
+          <button aria-label="Search" onClick={search.open}><Icon name="search" size={19} /></button>
           <button aria-label="Cart" onClick={() => nav('/cart')}><Icon name="bag" size={19} />{count > 0 && <b key={count} className="badge">{count}</b>}</button>
           <button aria-label="Toggle theme" className="theme-btn" onClick={toggle}><Icon name={theme === 'dark' ? 'sun' : 'moon'} size={19} /></button>
           <button aria-label="Menu" className="menu-btn" onClick={() => setOpen(true)}><Icon name="menu" size={20} /></button>

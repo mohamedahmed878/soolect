@@ -25,7 +25,7 @@ export default function Auth({ mode }) {
     <>
       <PageBar title={isReg ? 'Create account' : 'Log in'} />
       <form className="form" onSubmit={submit}>
-        {next !== '/' && <p className="notice">Create an account or log in to place and track your orders.</p>}
+        {next !== '/' && <p className="notice">Log in or create an account to continue.</p>}
         {isReg && <label className="fl"><span>Full name</span><input required value={f.name} onChange={set('name')} autoComplete="name" /></label>}
         <label className="fl"><span>Email</span><input required type="email" value={f.email} onChange={set('email')} autoComplete="email" /></label>
         {isReg && <label className="fl"><span>WhatsApp number</span><input required type="tel" value={f.phone} onChange={set('phone')} placeholder="+20 1xx xxx xxxx" autoComplete="tel" /></label>}

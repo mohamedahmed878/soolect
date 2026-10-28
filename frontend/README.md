@@ -1,21 +1,17 @@
-# SOALECT — Frontend (React + Vite)
+# SOOLECT: Frontend (React + Vite)
+
+الباك اند والنشر موصوفين في `README.md` اللي في جذر المشروع. المشروع كله بيتنشر على Vercel كمشروع واحد (Root Directory = جذر الريبو).
 
 ## تشغيل محلي
     npm install
     cp .env.example .env     # سيبه فاضي = وضع تجريبي (بدون باك اند)
     npm run dev
 
-## ربط الباك اند
-- `VITE_API_URL` = رابط مشروع الباك اند على Vercel (من غير /api في الآخر)
-- `VITE_PUSHER_KEY` / `VITE_PUSHER_CLUSTER` = الـ key العام من Pusher (الـ secret يتحط في الباك اند بس)
+لو عايز تشغّله مع الباك اند محلياً: شغّل `npm run dev:api` من جذر المشروع، وحط `VITE_API_URL=/` في `.env` (الـ dev server بيحوّل `/api` للباك اند على بورت 4000).
 
-## الـ API اللي الفرونت مستني الباك اند يوفره
-POST /api/auth/register · POST /api/auth/login · GET /api/auth/me
-GET /api/products · GET /api/products/:id
-POST /api/orders · GET /api/orders/my · GET /api/orders/:id
+## متغيرات البيئة (وقت الـ build)
+- `VITE_API_URL` = `/` يعني نفس الدومين (الباك اند على نفس مشروع Vercel). فاضي = وضع تجريبي.
+- `VITE_PUSHER_KEY` / `VITE_PUSHER_CLUSTER` = الـ key العام فقط. الـ secret في الباك اند بس.
 
-## Pusher (Real-time)
-Channel: `orders-<userId>` — Event: `order-updated` — Payload: الأوردر كامل بعد التحديث.
-
-## النشر على Vercel
-New Project → Root Directory = `frontend` → Framework: Vite → ضيف الـ Environment Variables.
+## الشراء بدون تسجيل
+الـ checkout مفتوح للضيف. بعد الطلب بيتحفظ رقم الأوردر والـ token السري في المتصفح، فيظهر في صفحة My Orders. ولو العميل غيّر جهازه يقدر يتتبع الأوردر برقم الأوردر + رقم التليفون.

@@ -1,18 +1,22 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import Icon from '../components/Icon'
 import ProductCard from '../components/ProductCard'
 import useProducts from '../hooks/useProducts'
+import { useSearch } from '../context/SearchContext'
 
 const TABS = [['all', 'All'], ['hoodies', 'Hoodies'], ['tshirts', 'T-Shirts'], ['accessories', 'Accessories']]
 
 export default function Shop() {
   const { products, loading, error, reload } = useProducts()
-  const [tab, setTab] = useState('all')
+  const search = useSearch()
+  const [params] = useSearchParams()
+  const initial = params.get('cat')
+  const [tab, setTab] = useState(TABS.some(([k]) => k === initial) ? initial : 'all')
   const list = tab === 'all' ? products : products.filter((p) => p.category === tab)
   return (
     <>
-      <Link to="/search" className="searchbar"><Icon name="search" size={16} /><span>Search for products...</span></Link>
+      <button type="button" className="searchbar" onClick={search.open}><Icon name="search" size={16} /><span>Search for products...</span></button>
       <div className="banner">
         <h3>New Collection SS/25</h3><span className="btn btn-light btn-sm">Shop Now</span><span className="arrow"><Icon name="chevron" size={12} /></span>
       </div>

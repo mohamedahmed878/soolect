@@ -1,25 +1,38 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Garment from '../components/Garment'
 import Icon from '../components/Icon'
 import { PageBar } from '../components/Layout'
-import { useCart, SHIPPING_METHODS } from '../context/CartContext'
+import { useCart, shippingFor } from '../context/CartContext'
+import { api, errMsg, isMock } from '../services/api'
 
-export const CODES = { SOALECT10: 0.1 } // temporary: real validation will be done by the backend
+const CODES = { SOALECT10: 0.1 } // demo mode only; with a backend the code is checked by the server
 
 export default function Cart() {
   const { items, setQty, remove, subtotal, discount, setDiscount, count } = useCart()
   const nav = useNavigate()
   const [code, setCode] = useState('')
   const [msg, setMsg] = useState('')
-  const shipping = subtotal >= 1000 || subtotal === 0 ? 0 : SHIPPING_METHODS[0].price
+  const shipping = subtotal ? shippingFor('standard', subtotal) : 0
   const total = subtotal - (discount?.amount || 0) + shipping
 
-  const apply = () => {
-    const rate = CODES[code.trim().toUpperCase()]
-    if (!rate) { setDiscount(null); return setMsg('Invalid code') }
-    setDiscount({ code: code.trim().toUpperCase(), amount: Math.round(subtotal * rate) }); setMsg('Code applied')
+  const applyCode = async (raw, silent = false) => {
+    const c = raw.trim().toUpperCase()
+    if (!c) return
+    try {
+      let result
+      if (isMock) {
+        if (!CODES[c]) throw new Error('Invalid code')
+        result = { code: c, amount: Math.round(subtotal * CODES[c]) }
+      } else {
+        result = await api.validateCoupon(c, subtotal)
+      }
+      setDiscount({ code: result.code, amount: result.amount })
+      if (!silent) setMsg('Code applied')
+    } catch (e) { setDiscount(null); setMsg(errMsg(e)) }
   }
+  // The discount depends on the subtotal, so re-check it whenever the cart changes.
+  useEffect(() => { if (discount?.code && subtotal) applyCode(discount.code, true) }, [subtotal]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!items.length) return (
     <><PageBar title="Your Cart" back={false} /><div className="empty"><Icon name="bag" size={42} /><p>Your cart is empty.</p><Link to="/shop" className="btn btn-dark">Browse products</Link></div></>
@@ -47,7 +60,7 @@ export default function Cart() {
         </ul>
         <div className="summary">
           <div className="label">Apply Discount Code</div>
-          <div className="coupon"><input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Enter code" /><button className="btn btn-dark btn-sm" onClick={apply}>Apply</button></div>
+          <div className="coupon"><input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Enter code" /><button className="btn btn-dark btn-sm" onClick={() => applyCode(code)}>Apply</button></div>
           {msg && <p className="muted small">{msg}</p>}
           <dl>
             <div><dt>Subtotal</dt><dd>EGP {subtotal}</dd></div>
