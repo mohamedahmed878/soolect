@@ -33,7 +33,7 @@ export default function Garment({ type = 'hoodie', color = 'black', className = 
         <path d="M38 132C38 76 68 56 100 56s62 20 62 76Z" fill={fill} /><path d="M26 132h148c0 14-32 24-74 24s-74-10-74-24Z" fill={fill} />
         <path d="M38 132C38 76 68 56 100 56s62 20 62 76Z" fill={`url(#g${id})`} /><path d="M26 132h148c0 14-32 24-74 24s-74-10-74-24Z" fill="#000" opacity=".18" />
       </>)}
-      <text x="100" y={type === 'cap' ? 108 : 112} textAnchor="middle" fontSize="8.5" letterSpacing="2.5" fill={ink} opacity=".7" fontWeight="600">SOALECT</text>
+      <text x="100" y={type === 'cap' ? 108 : 112} textAnchor="middle" fontSize="8.5" letterSpacing="2.5" fill={ink} opacity=".7" fontWeight="600">SOOLECT</text>
     </svg>
   )
 }

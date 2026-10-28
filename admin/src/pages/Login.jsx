@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { errMsg } from '../api'
 import { useAuth } from '../auth'
+import { ThemeToggle } from '../theme'
 import { ErrorBox, Field } from '../ui'
 
 export default function Login() {
@@ -21,6 +22,7 @@ export default function Login() {
 
   return (
     <div className="login">
+      <ThemeToggle className="theme-fab" />
       <form className="login-card" onSubmit={submit}>
         <b className="brand">SOOLECT <i>Admin</i></b>
         <p className="muted">Sign in with the admin account.</p>

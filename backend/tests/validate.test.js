@@ -5,7 +5,7 @@ import { isEmail, isPhone, phoneKey, validateOrderInput } from '../utils/validat
 const good = () => ({
   items: [{ productId: 'a'.repeat(24), color: 'Black', size: 'M', qty: 2, price: 1 }],
   contact: { email: 'Test@Example.com', phone: '+20 100 123 4567' },
-  address: { fullName: 'Mohamed Ahmed', address: '12 Street', city: 'Alexandria', postal: '' },
+  address: { fullName: 'Mohamed Ahmed', address: '12 Street', city: 'Alexandria' },
   shippingMethod: 'standard',
   paymentMethod: 'cod',
   discountCode: ' soolect10 ',
@@ -42,4 +42,11 @@ test('phone matching ignores formatting and country code', () => {
   assert.ok(!isPhone('123'))
   assert.ok(isEmail('a@b.co'))
   assert.ok(!isEmail('a b@c.co'))
+})
+
+test('review names are shortened for the homepage', async () => {
+  const { publicName } = await import('../utils/validate.js')
+  assert.equal(publicName('Mohamed Ahmed Ali'), 'Mohamed A.')
+  assert.equal(publicName('  sara  '), 'sara')
+  assert.equal(publicName(''), 'Customer')
 })

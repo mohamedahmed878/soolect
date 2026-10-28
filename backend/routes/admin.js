@@ -5,6 +5,9 @@ import Affiliate from '../models/Affiliate.js'
 import Coupon from '../models/Coupon.js'
 import Order, { ORDER_STATUSES, PAYMENT_STATUSES } from '../models/Order.js'
 import Product from '../models/Product.js'
+import Review from '../models/Review.js'
+import User from '../models/User.js'
+import { summary as reviewSummary } from './reviews.js'
 import { changeStatus } from '../services/orderService.js'
 import { publishOrderUpdate } from '../services/pusher.js'
 import { asyncHandler, HttpError } from '../utils/errors.js'
@@ -30,6 +33,98 @@ router.get('/stats', asyncHandler(async (req, res) => {
     paidOrDueOrders: revenue[0]?.orders || 0,
     lowStock: lowStock.slice(0, 50),
   })
+}))
+
+/* ------------------------------ analytics ------------------------------ */
+const TZ = 'Africa/Cairo'
+const DAY = 864e5
+const pct = (now, before) => (before ? Math.round(((now - before) / before) * 1000) / 10 : now ? null : 0)
+
+// Shopify-style report for the last N days (default 30), compared with the N days before.
+router.get('/analytics', asyncHandler(async (req, res) => {
+  const days = [7, 30, 90, 365].includes(Number(req.query.days)) ? Number(req.query.days) : 30
+  const to = new Date()
+  const from = new Date(to.getTime() - days * DAY)
+  const prevFrom = new Date(from.getTime() - days * DAY)
+  const live = { status: { $ne: 'cancelled' } }
+  const inRange = (a, b) => ({ createdAt: { $gte: a, $lt: b } })
+
+  const totalsOf = async (a, b) => {
+    const [r] = await Order.aggregate([
+      { $match: { ...inRange(a, b), ...live } },
+      { $group: { _id: null, sales: { $sum: '$total' }, orders: { $sum: 1 }, discounts: { $sum: '$discount' }, shipping: { $sum: '$shipping' }, units: { $sum: { $sum: '$items.qty' } } } },
+    ])
+    return r || { sales: 0, orders: 0, discounts: 0, shipping: 0, units: 0 }
+  }
+
+  const [cur, prev, cancelled, newCustomers, prevCustomers, daily, top, cities, payments, statuses, ratings] = await Promise.all([
+    totalsOf(from, to),
+    totalsOf(prevFrom, from),
+    Order.countDocuments({ ...inRange(from, to), status: 'cancelled' }),
+    User.countDocuments(inRange(from, to)),
+    User.countDocuments(inRange(prevFrom, from)),
+    Order.aggregate([
+      { $match: { ...inRange(from, to), ...live } },
+      { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt', timezone: TZ } }, sales: { $sum: '$total' }, orders: { $sum: 1 } } },
+    ]),
+    Order.aggregate([
+      { $match: { ...inRange(from, to), ...live } },
+      { $unwind: '$items' },
+      { $group: { _id: { id: '$items.productId', name: '$items.name' }, units: { $sum: '$items.qty' }, revenue: { $sum: { $multiply: ['$items.qty', '$items.price'] } } } },
+      { $sort: { revenue: -1 } }, { $limit: 8 },
+    ]),
+    Order.aggregate([
+      { $match: { ...inRange(from, to), ...live } },
+      { $group: { _id: '$address.city', sales: { $sum: '$total' }, orders: { $sum: 1 } } },
+      { $sort: { sales: -1 } }, { $limit: 8 },
+    ]),
+    Order.aggregate([
+      { $match: { ...inRange(from, to), ...live } },
+      { $group: { _id: '$paymentMethod', sales: { $sum: '$total' }, orders: { $sum: 1 } } },
+      { $sort: { orders: -1 } },
+    ]),
+    Order.aggregate([{ $match: inRange(from, to) }, { $group: { _id: '$status', count: { $sum: 1 } } }]),
+    reviewSummary(),
+  ])
+
+  // One point per day, zero-filled so the chart has no gaps.
+  const byDay = new Map(daily.map((d) => [d._id, d]))
+  const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' })
+  const series = []
+  for (let i = days - 1; i >= 0; i--) {
+    const date = fmt.format(new Date(to.getTime() - i * DAY))
+    const d = byDay.get(date)
+    series.push({ date, sales: d?.sales || 0, orders: d?.orders || 0 })
+  }
+
+  const aov = cur.orders ? cur.sales / cur.orders : 0
+  const prevAov = prev.orders ? prev.sales / prev.orders : 0
+  res.json({
+    days,
+    totals: {
+      sales: cur.sales, orders: cur.orders, units: cur.units, aov, discounts: cur.discounts, cancelled, newCustomers,
+      change: { sales: pct(cur.sales, prev.sales), orders: pct(cur.orders, prev.orders), aov: pct(aov, prevAov), customers: pct(newCustomers, prevCustomers) },
+    },
+    series,
+    topProducts: top.map((t) => ({ productId: t._id.id, name: t._id.name || 'Deleted product', units: t.units, revenue: t.revenue })),
+    cities: cities.map((c) => ({ city: c._id || 'Unknown', sales: c.sales, orders: c.orders })),
+    payments: payments.map((p) => ({ method: p._id, sales: p.sales, orders: p.orders })),
+    statuses: Object.fromEntries(statuses.map((s) => [s._id, s.count])),
+    reviews: ratings,
+  })
+}))
+
+/* ------------------------------- reviews -------------------------------- */
+router.get('/reviews', asyncHandler(async (req, res) => {
+  const [stats, list] = await Promise.all([reviewSummary(), Review.find().sort({ createdAt: -1 }).limit(200).lean()])
+  res.json({ ...stats, reviews: list.map(({ userId, __v, ...r }) => r) })
+}))
+
+router.delete('/reviews/:id', asyncHandler(async (req, res) => {
+  need(req.params.id, 'Review')
+  const review = await Review.findByIdAndDelete(req.params.id)
+  if (!review) throw new HttpError(404, 'Review not found')
+  res.json({ ok: true })
 }))
 
 /* ------------------------------- products ------------------------------ */

@@ -6,7 +6,7 @@ import { PageBar } from '../components/Layout'
 import { useCart, shippingFor } from '../context/CartContext'
 import { api, errMsg, isMock } from '../services/api'
 
-const CODES = { SOALECT10: 0.1 } // demo mode only; with a backend the code is checked by the server
+const CODES = { SOOLECT10: 0.1 } // demo mode only; with a backend the code is checked by the server
 
 export default function Cart() {
   const { items, setQty, remove, subtotal, discount, setDiscount, count } = useCart()

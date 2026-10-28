@@ -41,6 +41,11 @@ export const api = {
   saveCoupon: (id, body) => (id ? http.put(`/admin/coupons/${id}`, body) : http.post('/admin/coupons', body)).then(data),
   deleteCoupon: (id) => http.delete(`/admin/coupons/${id}`).then(data),
 
+  analytics: (days) => http.get('/admin/analytics', { params: { days } }).then(data),
+
+  reviews: () => http.get('/admin/reviews').then(data),
+  deleteReview: (id) => http.delete(`/admin/reviews/${id}`).then(data),
+
   affiliates: () => http.get('/admin/affiliates').then(data),
   createAffiliate: (body) => http.post('/admin/affiliates', body).then(data),
   updateAffiliate: (id, body) => http.put(`/admin/affiliates/${id}`, body).then(data),

@@ -18,6 +18,16 @@ const ls = {
 }
 const delay = (v) => new Promise((r) => setTimeout(() => r(v), 250))
 
+const shortName = (n = '') => { const p = String(n).trim().split(/\s+/).filter(Boolean); return !p.length ? 'Customer' : p.length === 1 ? p[0] : `${p[0]} ${p[p.length - 1][0].toUpperCase()}.` }
+const mockUserId = () => { const t = localStorage.getItem('soalect_token') || ''; return ls.get('mock_users', []).find((x) => 'mock-' + x._id === t)?._id }
+const reviewStats = (list) => {
+  const breakdown = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+  list.forEach((r) => { breakdown[r.rating] += 1 })
+  const count = list.length
+  const average = count ? Math.round((list.reduce((a, r) => a + r.rating, 0) / count) * 10) / 10 : 0
+  return { count, average, breakdown, reviews: list.slice(0, 12).map(({ userId, ...r }) => r) }
+}
+
 const mock = {
   products: () => delay(mockProducts),
   product: (id) => delay(mockProducts.find((p) => p._id === id)),
@@ -41,6 +51,21 @@ const mock = {
     if (!u) return Promise.reject(new Error('no session'))
     const { password: _, ...safe } = u
     return delay(safe)
+  },
+  reviews: () => delay(reviewStats(ls.get('mock_reviews', []))),
+  myReview: () => {
+    const id = mockUserId()
+    const r = id && ls.get('mock_reviews', []).find((x) => x.userId === id)
+    return delay(r ? { _id: r._id, rating: r.rating, comment: r.comment } : null)
+  },
+  saveReview: ({ rating, comment }) => {
+    const t = localStorage.getItem('soalect_token') || ''
+    const u = ls.get('mock_users', []).find((x) => 'mock-' + x._id === t)
+    if (!u) return Promise.reject(new Error('Please log in'))
+    const rest = ls.get('mock_reviews', []).filter((x) => x.userId !== u._id)
+    const r = { _id: 'r' + Date.now(), userId: u._id, name: shortName(u.name), rating: Number(rating), comment: String(comment || '').trim().slice(0, 500), createdAt: new Date().toISOString() }
+    ls.set('mock_reviews', [r, ...rest])
+    return delay({ _id: r._id, rating: r.rating, comment: r.comment })
   },
   createOrder: (payload) => {
     const orders = ls.get('mock_orders', [])
@@ -103,6 +128,9 @@ export const api = {
   },
   getOrder: (id, token) => (isMock ? mock.order(id) : http.get(`/orders/${id}`, { params: token ? { token } : undefined }).then((r) => r.data)),
   trackOrder: (d) => (isMock ? mock.track(d) : http.post('/orders/track', d).then((r) => { if (!loggedIn()) guest.remember(r.data); return r.data })),
+  getReviews: () => (isMock ? mock.reviews() : http.get('/reviews').then((r) => r.data)),
+  getMyReview: () => (isMock ? mock.myReview() : http.get('/reviews/mine').then((r) => r.data)),
+  saveReview: (d) => (isMock ? mock.saveReview(d) : http.post('/reviews', d).then((r) => r.data)),
   validateCoupon: (code, subtotal) => http.post('/coupons/validate', { code, subtotal }).then((r) => r.data),
 
 }

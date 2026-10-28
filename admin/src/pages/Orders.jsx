@@ -32,7 +32,7 @@ function Detail({ order, onClose, onUpdate }) {
             <dt>Name</dt><dd>{a.fullName}</dd>
             <dt>Phone</dt><dd>{order.contact?.phone}</dd>
             <dt>Email</dt><dd>{order.contact?.email}</dd>
-            <dt>Address</dt><dd>{[a.address, a.city, a.postal].filter(Boolean).join(', ')}</dd>
+            <dt>Address</dt><dd>{[a.address, a.city].filter(Boolean).join(', ')}</dd>
             <dt>Account</dt><dd>{order.userId ? 'Registered customer' : 'Guest'}</dd>
           </dl>
         </section>

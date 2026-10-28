@@ -18,7 +18,7 @@ export function Header() {
   return (
     <>
       <header className={`header ${pathname === '/' ? 'over' : ''}`}>
-        <Link to="/" className="logo"><LogoMark />SOALECT</Link>
+        <Link to="/" className="logo"><LogoMark />SOOLECT</Link>
         <nav className="header-links"><NavLink to="/" end>Home</NavLink><NavLink to="/shop">Shop</NavLink><NavLink to="/orders">Orders</NavLink><NavLink to="/account">Account</NavLink></nav>
         <div className="header-actions">
           <button aria-label="Search" onClick={search.open}><Icon name="search" size={19} /></button>

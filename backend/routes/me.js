@@ -36,7 +36,7 @@ router.put('/addresses', asyncHandler(async (req, res) => {
   if (req.body.addresses.length > 20) throw new HttpError(400, 'You can save up to 20 addresses')
   const addresses = req.body.addresses.map((a) => ({
     label: str(a.label, 30), fullName: str(a.fullName, 80), phone: str(a.phone, 30), address: str(a.address, 200),
-    city: str(a.city, 60), postal: str(a.postal, 20), isDefault: !!a.isDefault,
+    city: str(a.city, 60), isDefault: !!a.isDefault,
   }))
   const firstDefault = addresses.findIndex((a) => a.isDefault)
   addresses.forEach((a, i) => { a.isDefault = firstDefault === -1 ? i === 0 : i === firstDefault })

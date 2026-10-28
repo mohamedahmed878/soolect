@@ -10,6 +10,7 @@ import coupons from './routes/coupons.js'
 import me from './routes/me.js'
 import orders from './routes/orders.js'
 import products from './routes/products.js'
+import reviews from './routes/reviews.js'
 
 const app = express()
 app.disable('x-powered-by')
@@ -31,6 +32,7 @@ app.use('/api/products', products)
 app.use('/api/coupons', coupons)
 app.use('/api/orders', orders)
 app.use('/api/me', me)
+app.use('/api/reviews', reviews)
 app.use('/api/admin', admin)
 
 app.use(notFound)

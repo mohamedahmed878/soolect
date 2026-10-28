@@ -20,7 +20,7 @@ export default function Dashboard() {
 
   return (
     <>
-      <PageHead title="Dashboard" sub="How the store is doing right now." />
+      <PageHead title="Dashboard" sub="How the store is doing right now."><Link className="btn dark sm" to="/analytics">Full analytics</Link></PageHead>
       <ErrorBox>{err}</ErrorBox>
 
       <div className="tiles">

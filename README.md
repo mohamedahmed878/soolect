@@ -38,16 +38,18 @@ A separate app with its own Vercel project: orders, products, coupons, marketers
 ## How it works
 - **Guests can buy.** Checkout needs no account. The order response includes a secret `accessToken`; the browser keeps it so the guest can reopen the order. Guests can also look an order up with **order number + phone** (`POST /api/orders/track`).
 - **The server decides every price.** The browser sends only product, color, size and quantity. The API reads prices from MongoDB, checks stock, applies the coupon and computes shipping (standard 50 EGP, free from 1000; express 100; "free" only from 1000). Stock is reserved atomically per variant and released if anything fails.
-- **One admin** comes from `ADMIN_EMAIL` / `ADMIN_PASSWORD`; sign in on the admin site. Customers live in MongoDB.
+- **Admins:** the main admin comes from `ADMIN_EMAIL` / `ADMIN_PASSWORD`. Any customer whose `role` is `admin` in MongoDB (`users` collection) can also sign in on the admin site. Everyone else is `customer`.
 - **Variants:** each product has variants (color + size) with their own SKU, price (falls back to the product price), stock and image.
 - **Real-time:** when the admin changes an order status, Pusher (`orders-<userId>` / `order-updated`) updates the customer's open page. Optional; works without it.
 
 ## API
 Public: `POST /api/auth/register` · `POST /api/auth/login` · `GET /api/auth/me` · `GET /api/products[?category=&q=]` · `GET /api/products/:id` · `POST /api/coupons/validate` · `POST /api/orders` (guest or logged in) · `POST /api/orders/track` · `GET /api/orders/:id[?token=]` · `GET /api/orders/my`
 
+Reviews: `GET /api/reviews` (public, shown on the homepage) · `GET /api/reviews/mine` · `POST /api/reviews` · `DELETE /api/reviews/mine` (customer JWT; one review per customer, posting again edits it)
+
 Customer (JWT): `GET|PUT /api/me/wishlist` · `GET|PUT /api/me/addresses`
 
-Admin (JWT with admin role): `GET|POST|PUT|DELETE /api/admin/affiliates` · `GET /api/admin/affiliates/:id/orders` · `POST /api/admin/affiliates/:id/payout` · `GET /api/admin/stats` · `GET|POST|PUT|DELETE /api/admin/products` · `GET /api/admin/orders[?status=]` · `PATCH /api/admin/orders/:id/status` · `PATCH /api/admin/orders/:id/payment` · `GET|POST|PUT|DELETE /api/admin/coupons`
+Admin (JWT with admin role): `GET|POST|PUT|DELETE /api/admin/affiliates` · `GET /api/admin/affiliates/:id/orders` · `POST /api/admin/affiliates/:id/payout` · `GET /api/admin/stats` · `GET /api/admin/analytics?days=7|30|90|365` · `GET /api/admin/reviews` · `DELETE /api/admin/reviews/:id` · `GET|POST|PUT|DELETE /api/admin/products` · `GET /api/admin/orders[?status=]` · `PATCH /api/admin/orders/:id/status` · `PATCH /api/admin/orders/:id/payment` · `GET|POST|PUT|DELETE /api/admin/coupons`
 
 Order status flow: `processing -> shipped -> delivered`, or `cancelled` from processing/shipped (stock and coupon use are restored).
 

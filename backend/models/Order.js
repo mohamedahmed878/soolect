@@ -27,7 +27,7 @@ const orderSchema = new mongoose.Schema(
     accessToken: { type: String, required: true, select: false },
     items: { type: [itemSchema], validate: (v) => v.length > 0 },
     contact: { email: { type: String, required: true }, phone: { type: String, required: true } },
-    address: { fullName: String, address: String, city: String, postal: String },
+    address: { fullName: String, address: String, city: String },
     shippingMethod: { type: String, enum: ['standard', 'express', 'free'], required: true },
     paymentMethod: { type: String, enum: ['card', 'vodafone', 'cod', 'paypal'], required: true },
     paymentStatus: { type: String, enum: PAYMENT_STATUSES, default: 'pending' },

@@ -32,7 +32,7 @@ export default function Auth({ mode }) {
         <label className="fl"><span>Password</span><input required type="password" minLength={6} value={f.password} onChange={set('password')} autoComplete={isReg ? 'new-password' : 'current-password'} /></label>
         {err && <p className="error" role="alert">{err}</p>}
         <button className="btn btn-dark block" disabled={busy}>{busy ? 'Please wait…' : isReg ? 'Create account' : 'Log in'}</button>
-        <p className="muted center small">{isReg ? 'Already have an account?' : 'New to SOALECT?'} <Link className="link" to={`${isReg ? '/login' : '/register'}?next=${encodeURIComponent(next)}`}>{isReg ? 'Log in' : 'Create account'}</Link></p>
+        <p className="muted center small">{isReg ? 'Already have an account?' : 'New to SOOLECT?'} <Link className="link" to={`${isReg ? '/login' : '/register'}?next=${encodeURIComponent(next)}`}>{isReg ? 'Log in' : 'Create account'}</Link></p>
       </form>
     </>
   )

@@ -6,7 +6,6 @@ const addressSchema = new mongoose.Schema({
   phone: { type: String, trim: true, maxlength: 30 },
   address: { type: String, trim: true, maxlength: 200, required: true },
   city: { type: String, trim: true, maxlength: 60, required: true },
-  postal: { type: String, trim: true, maxlength: 20 },
   isDefault: { type: Boolean, default: false },
 })
 

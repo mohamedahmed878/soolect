@@ -23,7 +23,7 @@ export default function Checkout() {
   const nav = useNavigate()
   const saved = useAddresses().list
   const [step, setStep] = useState(0)
-  const [info, setInfo] = useState({ email: user?.email || '', phone: user?.phone || '', fullName: user?.name || '', address: '', city: 'Alexandria', postal: '' })
+  const [info, setInfo] = useState({ email: user?.email || '', phone: user?.phone || '', fullName: user?.name || '', address: '', city: 'Alexandria' })
   const [ship, setShip] = useState('standard')
   const [pay, setPay] = useState('cod')
   const [agree, setAgree] = useState(false)
@@ -45,7 +45,7 @@ export default function Checkout() {
       const order = await api.createOrder({
         items: items.map(({ productId, name, type, color, size, qty, price }) => ({ productId, name, type, color, size, qty, price })),
         contact: { email: info.email, phone: info.phone },
-        address: { fullName: info.fullName, address: info.address, city: info.city, postal: info.postal },
+        address: { fullName: info.fullName, address: info.address, city: info.city },
         shippingMethod: shipping.id, paymentMethod: pay, discountCode: discount?.code,
         subtotal, shipping: shippingCost, total,
       })
@@ -66,12 +66,12 @@ export default function Checkout() {
           <h3>Shipping Address</h3>
           {saved.length > 0 && (
             <div className="chips">
-              {saved.map((a) => <button type="button" key={a._id} className="chip" onClick={() => setInfo({ ...info, phone: a.phone || info.phone, fullName: a.fullName, address: a.address, city: a.city, postal: a.postal || '' })}>{a.label}{a.isDefault ? ' ★' : ''}</button>)}
+              {saved.map((a) => <button type="button" key={a._id} className="chip" onClick={() => setInfo({ ...info, phone: a.phone || info.phone, fullName: a.fullName, address: a.address, city: a.city })}>{a.label}{a.isDefault ? ' ★' : ''}</button>)}
             </div>
           )}
           <label className="fl"><span>Full Name</span><input required value={info.fullName} onChange={set('fullName')} /></label>
           <label className="fl"><span>Address</span><input required value={info.address} onChange={set('address')} /></label>
-          <div className="row2"><label className="fl"><span>City</span><input required value={info.city} onChange={set('city')} /></label><label className="fl"><span>Postal Code</span><input value={info.postal} onChange={set('postal')} /></label></div>
+          <label className="fl"><span>City</span><input required value={info.city} onChange={set('city')} /></label>
           <button className="btn btn-dark block">Continue to Shipping</button>
         </form>
       )}

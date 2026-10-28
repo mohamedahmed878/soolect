@@ -3,7 +3,7 @@ import Icon from '../components/Icon'
 import { PageBar } from '../components/Layout'
 import useAddresses from '../hooks/useAddresses'
 
-const EMPTY = { label: 'Home', fullName: '', phone: '', address: '', city: 'Alexandria', postal: '', isDefault: false }
+const EMPTY = { label: 'Home', fullName: '', phone: '', address: '', city: 'Alexandria', isDefault: false }
 
 export default function Addresses() {
   const { list, save, remove, setDefault } = useAddresses()
@@ -20,10 +20,7 @@ export default function Addresses() {
         <label className="fl"><span>Full Name</span><input required value={form.fullName} onChange={set('fullName')} /></label>
         <label className="fl"><span>Phone</span><input required type="tel" value={form.phone} onChange={set('phone')} /></label>
         <label className="fl"><span>Address</span><input required value={form.address} onChange={set('address')} /></label>
-        <div className="row2">
-          <label className="fl"><span>City</span><input required value={form.city} onChange={set('city')} /></label>
-          <label className="fl"><span>Postal Code</span><input value={form.postal} onChange={set('postal')} /></label>
-        </div>
+        <label className="fl"><span>City</span><input required value={form.city} onChange={set('city')} /></label>
         <label className="check"><input type="checkbox" checked={!!form.isDefault} onChange={(e) => setForm({ ...form, isDefault: e.target.checked })} /><span>Set as default address</span></label>
         <div className="btn-row"><button type="button" className="btn btn-ghost" onClick={() => setForm(null)}>Cancel</button><button className="btn btn-dark">Save Address</button></div>
       </form>
@@ -41,7 +38,7 @@ export default function Addresses() {
             <li key={a._id} className="addr" style={{ '--i': n }}>
               <div className="addr-head"><b>{a.label}</b>{a.isDefault && <span className="pill processing">Default</span>}</div>
               <span>{a.fullName} · {a.phone}</span>
-              <span className="muted">{a.address}, {a.city}{a.postal ? ` ${a.postal}` : ''}</span>
+              <span className="muted">{a.address}, {a.city}</span>
               <div className="addr-actions">
                 {!a.isDefault && <button onClick={() => setDefault(a._id)}>Make default</button>}
                 <button onClick={() => setForm(a)}>Edit</button>

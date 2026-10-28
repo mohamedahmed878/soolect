@@ -11,6 +11,12 @@ export const digits = (s) => String(s ?? '').replace(/\D/g, '')
 export const isPhone = (s) => { const d = digits(s); return d.length >= 8 && d.length <= 15 }
 // Compare phones by their last 10 digits so "+20 100 123 4567" matches "0100 123 4567".
 export const phoneKey = (s) => digits(s).slice(-10)
+// "Mohamed Ahmed Ali" -> "Mohamed A." : the homepage never shows a customer's full name.
+export const publicName = (name = '') => {
+  const parts = String(name).trim().split(/\s+/).filter(Boolean)
+  if (!parts.length) return 'Customer'
+  return parts.length === 1 ? parts[0] : `${parts[0]} ${parts[parts.length - 1][0].toUpperCase()}.`
+}
 export const escapeRegex = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 const bad = (msg) => new HttpError(400, msg)
@@ -36,7 +42,7 @@ export function validateOrderInput(body = {}) {
   if (!isPhone(phone)) throw bad('A valid phone number is required')
 
   const a = body.address || {}
-  const address = { fullName: str(a.fullName, 80), address: str(a.address, 200), city: str(a.city, 60), postal: str(a.postal, 20) }
+  const address = { fullName: str(a.fullName, 80), address: str(a.address, 200), city: str(a.city, 60) }
   if (!address.fullName || !address.address || !address.city) throw bad('Name, address and city are required')
 
   const shippingMethod = str(body.shippingMethod, 20)
