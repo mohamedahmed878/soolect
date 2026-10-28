@@ -119,13 +119,29 @@ async function syncOrderCounter() {
   if (Number.isFinite(seq) && seq > 0) await Counter.updateOne({ _id: 'order', seq: { $lt: seq } }, { $set: { seq } }, { upsert: true }).catch(() => {})
 }
 
+// Only `_id` and `number` may be unique on orders. Any other unique index is a leftover from an old version of the
+// schema (e.g. on contact.email) and makes every second order fail with "Already exists", so drop it.
+async function dropStaleOrderIndexes() {
+  const indexes = await Order.collection.indexes()
+  const stale = indexes.filter((i) => i.unique && i.name !== '_id_' && i.name !== 'number_1')
+  for (const i of stale) {
+    await Order.collection.dropIndex(i.name).catch((err) => console.error('Could not drop index', i.name, err.message))
+    console.warn('Dropped stale unique index on orders:', i.name)
+  }
+  return stale.length
+}
+
 async function createWithOrderNumber(doc) {
-  for (let attempt = 0; attempt < 4; attempt++) {
+  let healedIndexes = false
+  for (let attempt = 0; attempt < 5; attempt++) {
     try {
       return await Order.create({ ...doc, number: await nextOrderNumber() })
     } catch (e) {
-      if (e?.code !== 11000 || !e.keyPattern?.number || attempt === 3) throw e
-      await syncOrderCounter()
+      if (e?.code !== 11000 || attempt === 4) throw e
+      if (e.keyPattern?.number) { await syncOrderCounter(); continue }
+      // A duplicate on some other field: a stale unique index. Clean it up once, then retry.
+      if (healedIndexes || !(await dropStaleOrderIndexes().catch(() => 0))) throw e
+      healedIndexes = true
     }
   }
 }

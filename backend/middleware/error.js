@@ -17,7 +17,8 @@ export function errorHandler(err, req, res, next) {
   if (err?.code === 11000) {
     const field = Object.keys(err.keyPattern || {})[0] || ''
     const message = field === 'email' ? 'Email already registered' : field.includes('sku') ? 'SKU already exists' : field === 'code' ? 'Code already exists' : field === 'number' ? 'Could not generate an order number, please try again' : 'Already exists'
-    return res.status(409).json({ message })
+    console.error('Duplicate key on', err.keyPattern, err.keyValue) // shows up in Vercel logs
+    return res.status(409).json({ message: message === 'Already exists' && field ? `Already exists (${field})` : message })
   }
   console.error(err)
   res.status(500).json({ message: 'Server error' })
