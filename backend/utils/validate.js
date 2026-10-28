@@ -45,5 +45,7 @@ export function validateOrderInput(body = {}) {
   if (!PAYMENT_METHODS.includes(paymentMethod)) throw bad('Invalid payment method')
 
   const discountCode = str(body.discountCode, 40).toUpperCase() || null
-  return { items, contact: { email, phone }, address, shippingMethod, paymentMethod, discountCode }
+  // Marketer referral code from the `?ref=` link. Optional, and an unknown code never blocks an order.
+  const refCode = str(body.refCode, 20).toUpperCase() || null
+  return { items, contact: { email, phone }, address, shippingMethod, paymentMethod, discountCode, refCode }
 }

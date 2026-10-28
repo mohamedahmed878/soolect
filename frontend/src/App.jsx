@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import Layout from './components/Layout'
 import { useAuth } from './context/AuthContext'
@@ -13,6 +14,8 @@ import Account from './pages/Account'
 import Wishlist from './pages/Wishlist'
 import Addresses from './pages/Addresses'
 import Auth from './pages/Auth'
+import AdminAffiliates from './pages/AdminAffiliates'
+import { referral } from './services/api'
 
 // Only account-specific pages need a login. Guests can shop, check out and track orders.
 function Protected({ children }) {
@@ -23,6 +26,9 @@ function Protected({ children }) {
 }
 
 export default function App() {
+  // Remember a marketer's `?ref=CODE` whichever page the visitor lands on.
+  const { search } = useLocation()
+  useEffect(() => { referral.capture(search) }, [search])
   return (
     <Routes>
       <Route element={<Layout />}>
@@ -40,6 +46,7 @@ export default function App() {
         <Route path="orders/:id" element={<OrderDetails />} />
         <Route path="account" element={<Protected><Account /></Protected>} />
         <Route path="addresses" element={<Protected><Addresses /></Protected>} />
+        <Route path="admin/affiliates" element={<AdminAffiliates />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

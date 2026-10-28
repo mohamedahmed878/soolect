@@ -1,5 +1,7 @@
+import crypto from 'node:crypto'
 import { Router } from 'express'
 import { requireAdmin } from '../middleware/auth.js'
+import Affiliate from '../models/Affiliate.js'
 import Coupon from '../models/Coupon.js'
 import Order, { ORDER_STATUSES, PAYMENT_STATUSES } from '../models/Order.js'
 import Product from '../models/Product.js'
@@ -162,6 +164,96 @@ router.delete('/coupons/:id', asyncHandler(async (req, res) => {
   const coupon = await Coupon.findByIdAndDelete(req.params.id)
   if (!coupon) throw new HttpError(404, 'Coupon not found')
   res.json({ ok: true })
+}))
+
+/* ------------------------- affiliates (marketers) ------------------------ */
+function cleanAffiliate(b = {}) {
+  const out = {}
+  if ('name' in b) out.name = str(b.name, 80)
+  if ('code' in b) out.code = str(b.code, 20).toUpperCase()
+  if ('email' in b) out.email = str(b.email, 120).toLowerCase()
+  if ('phone' in b) out.phone = str(b.phone, 30)
+  if ('notes' in b) out.notes = str(b.notes, 300)
+  if ('commissionRate' in b) out.commissionRate = num(b.commissionRate)
+  if ('active' in b) out.active = !!b.active
+  if (out.commissionRate !== undefined && !Number.isFinite(out.commissionRate)) throw new HttpError(400, 'Commission rate must be a number')
+  return out
+}
+
+// Used when the admin leaves the code empty: letters from the name + 3 random characters, e.g. SARA-K4P.
+const autoCode = (name) => `${String(name).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10) || 'AFF'}-${crypto.randomBytes(2).toString('hex').slice(0, 3).toUpperCase()}`
+
+const ZERO = { orders: 0, sales: 0, pending: 0, payable: 0, paid: 0 }
+
+// Per-marketer numbers. Cancelled orders earn nothing.
+//   pending = order not delivered yet; payable = delivered and not yet paid out; paid = already paid out.
+async function statsFor(ids) {
+  const live = { $ne: ['$status', 'cancelled'] }
+  const delivered = { $eq: ['$status', 'delivered'] }
+  const isPaid = { $eq: ['$commissionPaid', true] }
+  const rows = await Order.aggregate([
+    { $match: { affiliateId: { $in: ids } } },
+    { $group: {
+      _id: '$affiliateId',
+      orders: { $sum: { $cond: [live, 1, 0] } },
+      sales: { $sum: { $cond: [live, '$total', 0] } },
+      pending: { $sum: { $cond: [{ $in: ['$status', ['processing', 'shipped']] }, '$commission', 0] } },
+      payable: { $sum: { $cond: [{ $and: [delivered, { $not: [isPaid] }] }, '$commission', 0] } },
+      paid: { $sum: { $cond: [{ $and: [delivered, isPaid] }, '$commission', 0] } },
+    } },
+  ])
+  return new Map(rows.map(({ _id, ...s }) => [String(_id), s]))
+}
+
+router.get('/affiliates', asyncHandler(async (req, res) => {
+  const list = await Affiliate.find().sort({ createdAt: -1 }).limit(200)
+  const stats = await statsFor(list.map((a) => a._id))
+  res.json(list.map((a) => ({ ...a.toJSON(), stats: stats.get(String(a._id)) || ZERO })))
+}))
+
+router.post('/affiliates', asyncHandler(async (req, res) => {
+  const data = cleanAffiliate(req.body)
+  if (!data.code && data.name) data.code = autoCode(data.name)
+  res.status(201).json({ ...(await Affiliate.create(data)).toJSON(), stats: ZERO })
+}))
+
+// Changing the rate only affects FUTURE orders: each order keeps the rate it was placed with.
+router.put('/affiliates/:id', asyncHandler(async (req, res) => {
+  need(req.params.id, 'Marketer')
+  const affiliate = await Affiliate.findById(req.params.id)
+  if (!affiliate) throw new HttpError(404, 'Marketer not found')
+  affiliate.set(cleanAffiliate(req.body))
+  await affiliate.save()
+  res.json({ ...affiliate.toJSON(), stats: (await statsFor([affiliate._id])).get(String(affiliate._id)) || ZERO })
+}))
+
+router.delete('/affiliates/:id', asyncHandler(async (req, res) => {
+  need(req.params.id, 'Marketer')
+  if (await Order.exists({ affiliateId: req.params.id })) throw new HttpError(409, 'This marketer has orders. Deactivate them instead of deleting.')
+  const affiliate = await Affiliate.findByIdAndDelete(req.params.id)
+  if (!affiliate) throw new HttpError(404, 'Marketer not found')
+  res.json({ ok: true })
+}))
+
+router.get('/affiliates/:id/orders', asyncHandler(async (req, res) => {
+  need(req.params.id, 'Marketer')
+  // .lean() skips the customer-facing toJSON, which hides the commission fields.
+  res.json(await Order.find({ affiliateId: req.params.id })
+    .select('number status total commission commissionRate commissionPaid commissionPaidAt createdAt')
+    .sort({ createdAt: -1 }).limit(200).lean())
+}))
+
+// Marks every delivered, unpaid order of this marketer as paid. Call it after sending them the money.
+router.post('/affiliates/:id/payout', asyncHandler(async (req, res) => {
+  need(req.params.id, 'Marketer')
+  const affiliate = await Affiliate.findById(req.params.id)
+  if (!affiliate) throw new HttpError(404, 'Marketer not found')
+  const due = await Order.find({ affiliateId: affiliate._id, status: 'delivered', commissionPaid: { $ne: true }, commission: { $gt: 0 } }).select('commission').lean()
+  const result = await Order.updateMany(
+    { _id: { $in: due.map((o) => o._id) }, commissionPaid: { $ne: true } },
+    { $set: { commissionPaid: true, commissionPaidAt: new Date() } }
+  )
+  res.json({ paidOrders: result.modifiedCount, amount: due.reduce((s, o) => s + o.commission, 0) })
 }))
 
 export default router

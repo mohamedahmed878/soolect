@@ -74,6 +74,20 @@ const guest = {
 }
 const loggedIn = () => !!localStorage.getItem('soalect_token')
 
+/* Marketer referral: `/?ref=CODE` is remembered for 30 days and sent with the order. */
+const REF_KEY = 'soalect_ref'
+const REF_DAYS = 30
+export const referral = {
+  capture: (search) => {
+    const code = new URLSearchParams(search).get('ref')?.trim().toUpperCase().slice(0, 20)
+    if (code && /^[A-Z0-9_-]{3,20}$/.test(code)) ls.set(REF_KEY, { code, at: Date.now() })
+  },
+  get: () => {
+    const r = ls.get(REF_KEY, null)
+    return r?.code && Date.now() - r.at < REF_DAYS * 864e5 ? r.code : undefined
+  },
+}
+
 /* ---------- Public API used by the app ---------- */
 export const api = {
   getProducts: () => (isMock ? mock.products() : http.get('/products').then((r) => r.data)),
@@ -81,7 +95,7 @@ export const api = {
   register: (d) => (isMock ? mock.register(d) : http.post('/auth/register', d).then((r) => r.data)),
   login: (d) => (isMock ? mock.login(d) : http.post('/auth/login', d).then((r) => r.data)),
   me: () => (isMock ? mock.me() : http.get('/auth/me').then((r) => r.data)),
-  createOrder: (d) => (isMock ? mock.createOrder(d) : http.post('/orders', d).then((r) => { if (!loggedIn()) guest.remember(r.data); return r.data })),
+  createOrder: (d) => (isMock ? mock.createOrder(d) : http.post('/orders', { ...d, refCode: referral.get() }).then((r) => { if (!loggedIn()) guest.remember(r.data); return r.data })),
   getMyOrders: () => {
     if (isMock) return mock.orders()
     if (loggedIn()) return http.get('/orders/my').then((r) => r.data)
@@ -90,6 +104,14 @@ export const api = {
   getOrder: (id, token) => (isMock ? mock.order(id) : http.get(`/orders/${id}`, { params: token ? { token } : undefined }).then((r) => r.data)),
   trackOrder: (d) => (isMock ? mock.track(d) : http.post('/orders/track', d).then((r) => { if (!loggedIn()) guest.remember(r.data); return r.data })),
   validateCoupon: (code, subtotal) => http.post('/coupons/validate', { code, subtotal }).then((r) => r.data),
+
+  /* Admin: marketers (affiliates) */
+  adminAffiliates: () => http.get('/admin/affiliates').then((r) => r.data),
+  adminCreateAffiliate: (d) => http.post('/admin/affiliates', d).then((r) => r.data),
+  adminUpdateAffiliate: (id, d) => http.put(`/admin/affiliates/${id}`, d).then((r) => r.data),
+  adminDeleteAffiliate: (id) => http.delete(`/admin/affiliates/${id}`).then((r) => r.data),
+  adminAffiliateOrders: (id) => http.get(`/admin/affiliates/${id}/orders`).then((r) => r.data),
+  adminAffiliatePayout: (id) => http.post(`/admin/affiliates/${id}/payout`).then((r) => r.data),
 }
 
 export const errMsg = (e) => e?.response?.data?.message || e?.message || 'Something went wrong'

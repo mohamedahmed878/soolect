@@ -1,10 +1,12 @@
 import crypto from 'node:crypto'
+import Affiliate from '../models/Affiliate.js'
 import Coupon from '../models/Coupon.js'
 import Counter from '../models/Counter.js'
 import Order from '../models/Order.js'
 import Product from '../models/Product.js'
 import { HttpError } from '../utils/errors.js'
 import { isObjectId } from '../utils/validate.js'
+import { commissionFor } from './commission.js'
 import { couponDiscount, shippingFor } from './pricing.js'
 
 const TRANSITIONS = { processing: ['shipped', 'cancelled'], shipped: ['delivered', 'cancelled'], delivered: [], cancelled: [] }
@@ -52,6 +54,11 @@ export async function createOrder(input, auth) {
   }
   const total = subtotal - discount + shipping
 
+  // Credit the marketer, if any. A bad/inactive code is ignored, and a marketer can't earn on their own order.
+  let affiliate = input.refCode ? await Affiliate.findOne({ code: input.refCode, active: true }) : null
+  if (affiliate?.email && affiliate.email === input.contact.email) affiliate = null
+  const commission = affiliate ? commissionFor(subtotal, discount, affiliate.commissionRate) : 0
+
   // No multi-document transaction (keeps it simple on serverless): reserve atomically, undo on any failure.
   const reserved = []
   let couponUsed = false
@@ -87,6 +94,7 @@ export async function createOrder(input, auth) {
       shippingMethod: input.shippingMethod,
       paymentMethod: input.paymentMethod,
       discountCode: coupon?.code,
+      ...(affiliate && { affiliateId: affiliate._id, affiliateCode: affiliate.code, commissionRate: affiliate.commissionRate, commission }),
       subtotal, discount, shipping, total,
       timeline: [{ status: 'placed', at: now }, { status: 'processing', at: now }],
     })

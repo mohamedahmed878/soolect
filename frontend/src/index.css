@@ -162,6 +162,19 @@ dl{display:grid;gap:9px;margin:6px 0}dl div{display:flex;justify-content:space-b
 .timeline .done{color:var(--ink)}.timeline .done i{background:var(--blue);border-color:var(--blue);box-shadow:0 0 0 4px #2f5fd022}.timeline .done::before{background:var(--blue);animation:grow .6s var(--ease) both;transform-origin:top}@keyframes grow{from{transform:scaleY(0)}}
 .profile{display:flex;align-items:center;gap:12px;padding:6px 0 18px}.profile>div{display:grid;font-size:.9rem}.profile .muted{font-size:.75rem}.avatar{display:grid;place-items:center;width:50px;height:50px;border-radius:50%;background:var(--primary);color:var(--on-primary);font-weight:800}
 .menu{border-top:1px solid var(--line)}.menu li{animation:rise .5s var(--ease) both;animation-delay:calc(var(--i,0)*60ms)}.menu a,.menu button{display:flex;align-items:center;gap:14px;width:100%;padding:15px 2px;border-bottom:1px solid var(--line);text-align:start;font-size:.86rem;transition:padding .25s var(--ease)}.menu a:hover{padding-left:8px}.menu span{flex:1}.menu button:disabled{opacity:.55;cursor:default}.menu svg{color:var(--muted)}
+/* ---- admin: marketers / affiliates ---- */
+.aff-list{display:grid;gap:14px;margin-top:14px}
+.aff{padding:14px;border:1px solid var(--line);border-radius:10px;display:grid;gap:12px;animation:rise .5s var(--ease) both}.aff.off{opacity:.65}
+.aff-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.aff-head>div{display:grid;font-size:.9rem}.aff-head .muted{font-size:.72rem}
+.aff-link{display:flex;gap:8px}.aff-link input{flex:1;min-width:0;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:.72rem}
+.aff-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.aff-stats.top{margin:2px 0 6px;grid-template-columns:repeat(2,1fr)}
+.aff-stat{padding:9px 10px;border-radius:8px;background:var(--surface);display:grid;gap:2px}.aff-stat small{font-size:.62rem;color:var(--muted);font-weight:600}.aff-stat b{font-size:.82rem}
+.aff-stat.hot{background:var(--amber-bg)}.aff-stat.hot b{color:var(--amber)}
+.aff-actions{display:flex;flex-wrap:wrap;gap:8px}.btn.danger{color:var(--red)}
+.aff-new{padding:14px;border:1px solid var(--line);border-radius:10px;margin-top:8px}
+.aff-orders{display:grid;border-top:1px solid var(--line)}.aff-orders li{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:.8rem}
+.aff-orders li>div{display:grid;flex:1}.aff-orders .muted{font-size:.68rem}.aff-orders .aff-amt{flex:none;text-align:end}
+@media(min-width:900px){.aff-stats.top{grid-template-columns:repeat(4,1fr)}.aff-stats{grid-template-columns:repeat(5,1fr)}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 
 /* ---- laptop / desktop layout ---- */

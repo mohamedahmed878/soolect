@@ -32,6 +32,14 @@ const orderSchema = new mongoose.Schema(
     paymentMethod: { type: String, enum: ['card', 'vodafone', 'cod', 'paypal'], required: true },
     paymentStatus: { type: String, enum: PAYMENT_STATUSES, default: 'pending' },
     discountCode: String,
+    // Affiliate (marketer) attribution. The rate and amount are snapshots taken at checkout,
+    // so changing a marketer's rate later never rewrites old orders. Hidden from customers (see toJSON).
+    affiliateId: { type: mongoose.Schema.Types.ObjectId, ref: 'Affiliate', index: true },
+    affiliateCode: String,
+    commissionRate: Number,
+    commission: { type: Number, default: 0, min: 0 },
+    commissionPaid: { type: Boolean, default: false },
+    commissionPaidAt: Date,
     subtotal: { type: Number, required: true },
     discount: { type: Number, default: 0 },
     shipping: { type: Number, required: true },
@@ -47,6 +55,7 @@ orderSchema.index({ createdAt: -1 })
 orderSchema.set('toJSON', {
   transform: (doc, ret) => {
     delete ret.accessToken
+    for (const k of ['affiliateId', 'affiliateCode', 'commissionRate', 'commission', 'commissionPaid', 'commissionPaidAt']) delete ret[k]
     delete ret.__v
     return ret
   },
